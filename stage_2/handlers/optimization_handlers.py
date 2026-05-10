@@ -104,3 +104,51 @@ def plot_capacity_utilization(result):
     ax.legend()
     plt.tight_layout()
     return fig
+
+
+def compare_results(r1, r2, label1="Stage 1", label2="Stage 2"):
+    """Print a side-by-side summary comparing two optimization results."""
+    def sites_str(r):
+        return ", ".join(f"S{s+1}({fmt[0].upper()})"
+                         for _, row in r["selected_sites"].iterrows()
+                         for s, fmt in [(row["site_id"], row["format"])])
+
+    rows = [
+        ("Total demand (units/week)", f"{r1['objective_value']:.1f}", f"{r2['objective_value']:.1f}"),
+        ("Budget used (k€)",          f"{r1['budget_used']:.0f} / 850", f"{r2['budget_used']:.0f} / 850"),
+        ("Clients assigned",          f"{len(r1['assignments'])} / 200", f"{len(r2['assignments'])} / 200"),
+        ("Clients unassigned",        str(len(r1['unassigned_clients'])), str(len(r2['unassigned_clients']))),
+        ("Stores opened",             str(len(r1['selected_sites'])), str(len(r2['selected_sites']))),
+        ("Sites selected",            sites_str(r1), sites_str(r2)),
+    ]
+
+    col_w = max(len(label1), len(label2), 22)
+    header = f"{'Metric':<30}  {label1:<{col_w}}  {label2:<{col_w}}"
+    print(header)
+    print("-" * len(header))
+    for metric, v1, v2 in rows:
+        print(f"{metric:<30}  {v1:<{col_w}}  {v2:<{col_w}}")
+
+
+def plot_comparison(r1, r2, label1="Stage 1", label2="Stage 2"):
+    """Bar chart comparing key KPIs between two optimization results."""
+    metrics = ["Total demand\n(units/week)", "Budget used\n(k€)", "Clients\nassigned"]
+    v1 = [r1["objective_value"], r1["budget_used"], len(r1["assignments"])]
+    v2 = [r2["objective_value"], r2["budget_used"], len(r2["assignments"])]
+
+    x   = np.arange(len(metrics))
+    w   = 0.35
+    fig, ax = plt.subplots(figsize=(9, 5))
+    ax.bar(x - w / 2, v1, w, label=label1, color="#4878D0", alpha=0.85)
+    ax.bar(x + w / 2, v2, w, label=label2, color="#EE854A", alpha=0.85)
+
+    for xi, (a, b) in zip(x, zip(v1, v2)):
+        ax.text(xi - w / 2, a + max(v1 + v2) * 0.01, f"{a:.0f}", ha="center", va="bottom", fontsize=9)
+        ax.text(xi + w / 2, b + max(v1 + v2) * 0.01, f"{b:.0f}", ha="center", va="bottom", fontsize=9)
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(metrics)
+    ax.set_title("Stage 1 vs Stage 2: Key Performance Indicators")
+    ax.legend()
+    plt.tight_layout()
+    return fig

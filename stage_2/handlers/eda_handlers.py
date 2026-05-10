@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 #Handler function "toolbox" to make the notebook cleaner
 
-DATA_PATH = "../data/case-opticlean-data-dsba"
+DATA_PATH = "../data"
 
 _COLORS = {
     0: "#4878D0",

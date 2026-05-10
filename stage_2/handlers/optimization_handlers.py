@@ -7,7 +7,7 @@ import matplotlib.patches as mpatches
 sys.path.insert(0, '..')
 from opticlean_optimization import solve_location_model  # noqa: E402
 
-DATA_PATH = "../data/case-opticlean-data-dsba"
+DATA_PATH = "../data"
 
 _SITE_COLORS = [
     "#E41A1C", "#377EB8", "#4DAF4A", "#984EA3",

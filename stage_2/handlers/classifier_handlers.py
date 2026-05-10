@@ -11,7 +11,7 @@ from sklearn.metrics import (
     roc_auc_score, roc_curve,
 )
 
-DATA_PATH = "../data/case-opticlean-data-dsba"
+DATA_PATH = "../data"
 
 # purchased_products is excluded: present in historic but absent from potential_clients
 FEATURES = ["employes", "surface", "firm_age", "monthly_volume", "purchase_staff", "dist_retail_point"]

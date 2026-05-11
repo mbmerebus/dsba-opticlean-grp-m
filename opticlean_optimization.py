@@ -58,10 +58,17 @@ def solve_location_model(
     if time_limit is not None:
         model.Params.TimeLimit = time_limit
 
+    # Decision variables:
+    # s_j = 1 if candidate site j is opened as a small store, 0 otherwise.
+    # l_j = 1 if candidate site j is opened as a large store, 0 otherwise.
+    # x_ij = 1 if client i is assigned to candidate site j, 0 otherwise.
     open_small = model.addVars(site_ids, vtype=GRB.BINARY, name="open_small")
     open_large = model.addVars(site_ids, vtype=GRB.BINARY, name="open_large")
     assign = model.addVars(client_ids, site_ids, vtype=GRB.BINARY, name="assign")
 
+    # Objective:
+    # max sum_i sum_j d_ij * x_ij
+    # where d_ij is the predicted demand captured from client i at site j.
     model.setObjective(
         gp.quicksum(
             float(demand_df.loc[i, j]) * assign[i, j]
@@ -71,6 +78,8 @@ def solve_location_model(
         GRB.MAXIMIZE,
     )
 
+    # Budget constraint:
+    # sum_j cost_small_j * s_j + cost_large_j * l_j <= B
     model.addConstr(
         gp.quicksum(
             float(sites_df.loc[j, "cost_small"]) * open_small[j]
@@ -82,18 +91,27 @@ def solve_location_model(
     )
 
     for j in site_ids:
+        # Store-format constraint:
+        # s_j + l_j <= 1 for every site j
+        # A site can be closed, opened small, or opened large, but not both.
         model.addConstr(
             open_small[j] + open_large[j] <= 1,
             name=f"one_format[{j}]",
         )
 
     for i in client_ids:
+        # Assignment constraint:
+        # sum_j x_ij <= 1 for every client i
+        # A client can be assigned to at most one opened site.
         model.addConstr(
             gp.quicksum(assign[i, j] for j in site_ids) <= 1,
             name=f"assign_once[{i}]",
         )
 
     for j in site_ids:
+        # Capacity constraint:
+        # sum_i d_ij * x_ij <= cap_small_j * s_j + cap_large_j * l_j
+        # Captured demand assigned to a site cannot exceed its chosen capacity.
         model.addConstr(
             gp.quicksum(float(demand_df.loc[i, j]) * assign[i, j] for i in client_ids)
             <= float(sites_df.loc[j, "cap_small"]) * open_small[j]
@@ -103,6 +121,9 @@ def solve_location_model(
 
     for i in client_ids:
         for j in site_ids:
+            # Opening-link constraint:
+            # x_ij <= s_j + l_j for every client-site pair (i, j)
+            # A client can only be assigned to a site that is actually opened.
             model.addConstr(
                 assign[i, j] <= open_small[j] + open_large[j],
                 name=f"assignment_requires_open_site[{i},{j}]",
